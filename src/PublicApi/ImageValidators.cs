@@ -9,7 +9,7 @@ public static class ImageValidators
 
     public static bool IsValidImage(this byte[] postedFile, string fileName)
     {
-        return postedFile != null && postedFile.Length > 0 && postedFile.Length <= ImageMaximumBytes && IsExtensionValid(fileName);
+        return postedFile is {Length: > 0} && postedFile.Length <= ImageMaximumBytes && IsExtensionValid(fileName);
     }
 
     private static bool IsExtensionValid(string fileName)
