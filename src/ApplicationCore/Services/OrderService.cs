@@ -1,4 +1,10 @@
-﻿using System.Linq;
+﻿using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.Mime;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Ardalis.GuardClauses;
 using Microsoft.eShopWeb.ApplicationCore.Entities;
@@ -48,6 +54,17 @@ public class OrderService : IOrderService
 
         var order = new Order(basket.BuyerId, shippingAddress, items);
 
+        var model = new {ShippingAddress = order.ShipToAddress, Items = order.OrderItems, FinalPrice = order.Total()};
+        using var ms = new MemoryStream();
+        await JsonSerializer.SerializeAsync(ms, model, new JsonSerializerOptions() { WriteIndented = true });
+        var json = JsonSerializer.Serialize(model);
+        ms.Seek(0, SeekOrigin.Begin);
+        var uri = "https://eshop-function.azurewebsites.net/api/OrderDetails?code=s9o1qsHDPO0DktXl-cFKxH1uIiJviIInYAzhqDjjwjWmAzFuTQuW0A==";
+
+        using var httpClient = new HttpClient();
+        var stringContent = new StringContent(json, Encoding.UTF8, MediaTypeNames.Application.Json);
+        var httpResponseMessage = await httpClient.PostAsync(uri, stringContent);
+        httpResponseMessage.EnsureSuccessStatusCode();
         await _orderRepository.AddAsync(order);
     }
 }

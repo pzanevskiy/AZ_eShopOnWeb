@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Net.Http.Headers;
+using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -52,7 +54,26 @@ public class CheckoutModel : PageModel
             }
 
             var updateModel = items.ToDictionary(b => b.Id.ToString(), b => b.Quantity);
-            await _basketService.SetQuantities(BasketModel.Id, updateModel);
+            var basket = await _basketService.SetQuantities(BasketModel.Id, updateModel);
+            var model = basket.Items.Select(item => new
+            {
+                ItemId = item.CatalogItemId,
+                Quantity = item.Quantity
+            });
+            using var ms = new MemoryStream();
+            await JsonSerializer.SerializeAsync(ms, model, new JsonSerializerOptions() { WriteIndented = true });
+            ms.Seek(0, SeekOrigin.Begin);
+
+            //var uri = "https://eshopweb-test.azurewebsites.net/api/eshop-orderTrigger?code=QzATCwp-udILnEUbaq1ejm2orjoIohUOUPe2aJzsOwSbAzFuem7q7g==";
+            
+            //using var httpClient = new HttpClient();
+            //var content = new MultipartFormDataContent();
+            //var streamContent = new StreamContent(ms);
+            //streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            //content.Add(streamContent, "metadata", "file");
+            ////var httpResponseMessage = await httpClient.PostAsync(uri, content);
+            ////httpResponseMessage.EnsureSuccessStatusCode();
+
             await _orderService.CreateOrderAsync(BasketModel.Id, new Address("123 Main St.", "Kent", "OH", "United States", "44240"));
             await _basketService.DeleteBasketAsync(BasketModel.Id);
         }

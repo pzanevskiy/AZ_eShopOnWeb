@@ -26,12 +26,23 @@ using MinimalApi.Endpoint.Configurations.Extensions;
 using MinimalApi.Endpoint.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Logging.AddConsole();
+builder.Logging.AddApplicationInsights();
+builder.Logging.SetMinimumLevel(LogLevel.Trace);
+builder.Services.AddLogging(l =>
+{
+    l.AddApplicationInsights();
+});
+IServiceProvider serviceProvider = builder.Services.BuildServiceProvider();
+ILogger<Program> logger = serviceProvider.GetRequiredService<ILogger<Program>>();
 
+logger.LogInformation("Logger is working...");
+//throw new Exception("Cannot move further");
 builder.Services.AddEndpoints();
 
 // Use to force loading of appsettings.json of test project
 builder.Configuration.AddConfigurationFile("appsettings.test.json");
-builder.Logging.AddConsole();
+//builder.Logging.AddConsole();
 
 Microsoft.eShopWeb.Infrastructure.Dependencies.ConfigureServices(builder.Configuration, builder.Services);
 
@@ -45,7 +56,7 @@ builder.Services.Configure<CatalogSettings>(builder.Configuration);
 builder.Services.AddSingleton<IUriComposer>(new UriComposer(builder.Configuration.Get<CatalogSettings>()));
 builder.Services.AddScoped(typeof(IAppLogger<>), typeof(LoggerAdapter<>));
 builder.Services.AddScoped<ITokenClaimsService, IdentityTokenClaimService>();
-
+builder.Services.AddApplicationInsightsTelemetry();
 var configSection = builder.Configuration.GetRequiredSection(BaseUrlConfiguration.CONFIG_NAME);
 builder.Services.Configure<BaseUrlConfiguration>(configSection);
 var baseUrlConfig = configSection.Get<BaseUrlConfiguration>();
