@@ -59,7 +59,7 @@ public class OrderService : IOrderService
         await JsonSerializer.SerializeAsync(ms, model, new JsonSerializerOptions() { WriteIndented = true });
         var json = JsonSerializer.Serialize(model);
         ms.Seek(0, SeekOrigin.Begin);
-        var uri = "https://eshop-function.azurewebsites.net/api/OrderDetails?code=s9o1qsHDPO0DktXl-cFKxH1uIiJviIInYAzhqDjjwjWmAzFuTQuW0A==";
+        var uri = "https://eshopweb-functions.azurewebsites.net/api/DeliveryOrderProcessor?code=XuNmHaNINYecFodly1H_v7C8EPKV3rpTfrD0BU74gJ4BAzFuUibcbQ==";
 
         using var httpClient = new HttpClient();
         var stringContent = new StringContent(json, Encoding.UTF8, MediaTypeNames.Application.Json);

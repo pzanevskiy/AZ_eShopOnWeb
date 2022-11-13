@@ -1,5 +1,7 @@
 ﻿using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
+using Azure.Messaging.ServiceBus;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -60,20 +62,15 @@ public class CheckoutModel : PageModel
                 ItemId = item.CatalogItemId,
                 Quantity = item.Quantity
             });
+            var json = JsonSerializer.Serialize(model);
+            var contentBytes = Encoding.UTF8.GetBytes(json);
             using var ms = new MemoryStream();
-            await JsonSerializer.SerializeAsync(ms, model, new JsonSerializerOptions() { WriteIndented = true });
-            ms.Seek(0, SeekOrigin.Begin);
+            string queueName = "eshop_queue";
+            string sbConnectionString = "Endpoint=sb://eshopweb.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=rLAScuZL819zT3o4Sa+6ulHmAniFKTarigwuevcUiGA=";
+            var sbClient = new ServiceBusClient(sbConnectionString);
+            var sbSender = sbClient.CreateSender(queueName);
 
-            //var uri = "https://eshopweb-test.azurewebsites.net/api/eshop-orderTrigger?code=QzATCwp-udILnEUbaq1ejm2orjoIohUOUPe2aJzsOwSbAzFuem7q7g==";
-            
-            //using var httpClient = new HttpClient();
-            //var content = new MultipartFormDataContent();
-            //var streamContent = new StreamContent(ms);
-            //streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-            //content.Add(streamContent, "metadata", "file");
-            ////var httpResponseMessage = await httpClient.PostAsync(uri, content);
-            ////httpResponseMessage.EnsureSuccessStatusCode();
-
+            await sbSender.SendMessageAsync(new ServiceBusMessage(contentBytes));
             await _orderService.CreateOrderAsync(BasketModel.Id, new Address("123 Main St.", "Kent", "OH", "United States", "44240"));
             await _basketService.DeleteBasketAsync(BasketModel.Id);
         }
